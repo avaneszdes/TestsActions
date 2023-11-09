@@ -39,7 +39,6 @@ jobs:
         name: dotnet-results.xlm
       if: ${{ always() }}
     - name: Extract test data 
-      shell: bash
       working-directory: src
       run: |
         echo OOOOOOOOOODDDDDDDDDDDDDDfaaaaaaa
@@ -55,3 +54,6 @@ jobs:
           else
           echo "No match found."
           fi
+      shell: bash
+      if: ${{ always() }}
+      
