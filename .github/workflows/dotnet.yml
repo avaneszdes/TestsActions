@@ -31,14 +31,26 @@ jobs:
       with:
         name: dotnet-results.xlm
         path: TestResults
+        retention-days: 1
       if: ${{ always() }}
     - name: Download dotnet test results
       uses: actions/download-artifact@v3
       with:
         name: dotnet-results.xlm
-        path: TestResults
       if: ${{ always() }}
-    - shell: bash
+    - name: Extract test data 
+      shell: bash
+      working-directory: TestResults
       run: |
-        value=`cat TestResults/dotnet-results.xlm`
+        value=`cat dotnet-results.xlm`
         expr $value 'total="([0-9]+)" executed="([0-9]+)" passed="([0-9]+)" failed="([0-9]+)"' dotnet-results.txt
+        pattern='total="([0-9]+)" executed="([0-9]+)" passed="([0-9]+)" failed="([0-9]+)"'
+          if [[ "$xml_string" =~ $pattern ]]; then
+          echo total="${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          echo executed="${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
+          echo passed="${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
+          echo failed="${BASH_REMATCH[4]}" >> $GITHUB_OUTPUT
+          echo "Total: $total, Executed: $executed, Passed: $passed, Failed: $failed"
+          else
+          echo "No match found."
+          fi
