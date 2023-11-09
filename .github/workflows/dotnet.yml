@@ -37,6 +37,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: dotnet-results.xlm
+        path: TestResults
       if: ${{ always() }}
     - name: Extract test data 
       run: |
