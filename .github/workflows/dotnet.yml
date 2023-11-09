@@ -25,10 +25,20 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test with dotnet
-      run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+      run: dotnet test --logger trx --results-directory "TestResults}"
     - name: Upload dotnet test results
       uses: actions/upload-artifact@v3
       with:
-        name: dotnet-results-${{ matrix.dotnet-version }}
-        path: TestResults-${{ matrix.dotnet-version }}
+        name: dotnet-results
+        path: TestResults
       if: ${{ always() }}
+    - name: Download dotnet test results
+      uses: actions/download-artifact@v3
+      with:
+        name: dotnet-results.xlm
+        path: TestResults
+      if: ${{ always() }}
+    - shell: bash
+      run: |
+        value=`cat TestResults/dotnet-results.xlm`
+        expr $value 'total="([0-9]+)" executed="([0-9]+)" passed="([0-9]+)" failed="([0-9]+)"' dotnet-results.txt
