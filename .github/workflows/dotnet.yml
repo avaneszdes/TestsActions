@@ -41,7 +41,7 @@ jobs:
       if: ${{ always() }}
     - name: Extract test data 
       run: |
-        value=`cat dotnet-results.xlm`
+        value=`cat ~/dotnet-results.xlm`
         expr $value 'total="([0-9]+)" executed="([0-9]+)" passed="([0-9]+)" failed="([0-9]+)"' dotnet-results.txt
         pattern='total="([0-9]+)" executed="([0-9]+)" passed="([0-9]+)" failed="([0-9]+)"'
           if [[ "$xml_string" =~ $pattern ]]; then
