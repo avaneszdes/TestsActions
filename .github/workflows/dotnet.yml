@@ -47,7 +47,7 @@ jobs:
 
       - name: Run .NET tests with reporter
         id: tests
-        working-directory: src
+        working-directory: GithubActions
         run: |
           dotnet test --configuration Release --logger "trx;LogFileName=test_results.trx" /nologo
 
