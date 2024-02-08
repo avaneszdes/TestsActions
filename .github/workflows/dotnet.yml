@@ -34,16 +34,16 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Dotnet restore
-        working-directory: GithubActions
+        working-directory: src
         run: dotnet restore
 
       - name: Dotnet build
-        working-directory: GithubActions
+        working-directory: src
         run: dotnet build --configuration Release --no-restore
 
       - name: Run .NET tests with reporter
         id: tests
-        working-directory: GithubActionsTests
+        working-directory: src
         run: |
           dotnet test --configuration Release --logger "trx;LogFileName=test_results.trx" /nologo
 
@@ -54,7 +54,7 @@ jobs:
         with:
           verbosity: detailed
           reportType: trx
-          targetDirectory: ./TestsActions/GithubActionsTests/TestResults/test_results.trx
+          targetDirectory: ./TestResults/test_results.trx
           reportsDirectory: ./TestResults/test-reports
 
       - name: Parse test report and format results
