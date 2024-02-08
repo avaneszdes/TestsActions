@@ -34,11 +34,11 @@ jobs:
           dotnet-version: ${{ matrix.dotnet-version }}
 
       - name: Dotnet restore
-        working-directory: src
+        working-directory: GithubActions
         run: dotnet restore
 
       - name: Dotnet build
-        working-directory: src
+        working-directory: GithubActions
         run: dotnet build --configuration Release --no-restore
 
       - uses: actions/checkout@v3
@@ -47,7 +47,7 @@ jobs:
 
       - name: Run .NET tests with reporter
         id: tests
-        working-directory: src
+        working-directory: GithubActions
         run: |
           dotnet test --configuration Release --logger "trx;LogFileName=test_results.trx" /nologo
 
