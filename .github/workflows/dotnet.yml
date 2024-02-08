@@ -48,6 +48,7 @@ jobs:
           dotnet test --configuration Release --logger "trx;LogFileName=test_results.trx" /nologo
 
       - name: Generate detailed test report
+        if: always()
         id: detailed_report
         uses: bibipkins/dotnet-test-reporter@v1.4.0
         with:
