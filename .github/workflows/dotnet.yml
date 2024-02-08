@@ -54,8 +54,8 @@ jobs:
         with:
           verbosity: detailed
           reportType: trx
-          targetDirectory: ./test-results
-          reportsDirectory: ./test-reports
+          targetDirectory: ./TestResults/test-results
+          reportsDirectory: ./TestResults/test-reports
 
       - name: Parse test report and format results
         id: format_results
