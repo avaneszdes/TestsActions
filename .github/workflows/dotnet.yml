@@ -53,7 +53,7 @@ jobs:
         uses: bibipkins/dotnet-test-reporter@v1.4.0
         with:
           reportType: trx
-          targetDirectory: ./GithubActionsTests/TestResults/test_results.trx
+          targetDirectory: ./GithubActionsTests/TestResults/
           reportsDirectory: ./GithubActionsTests/TestResults/
 
       - name: Parse test report and format results
