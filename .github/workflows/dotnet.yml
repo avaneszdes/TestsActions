@@ -19,17 +19,6 @@ jobs:
       matrix:
         dotnet-version: [ '7.x' ]
 
-    services:
-      postgres:
-        image: postgres:latest
-        env:
-          POSTGRES_DB: TelegramBot3333
-          POSTGRES_USER: sa
-          POSTGRES_PASSWORD: reallyStrongPwd#123
-        ports:
-          - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
-
     steps:
       - name: Checkout repository
         id: vars
@@ -48,19 +37,11 @@ jobs:
         working-directory: src
         run: dotnet restore
 
-      - name: Install dotnet-ef tool
-        run: dotnet tool install --global dotnet-ef --version 7.0.13
-
       - name: Dotnet build
         working-directory: src
         run: dotnet build --configuration Release --no-restore
 
-      - name: Apply database migrations
-        working-directory: src/LingoPractices.Api
-        run: dotnet ef database update --configuration Release
-
       - uses: actions/checkout@v3
-    
       - name: Install dotnet-test-reporter
         run: dotnet tool install --global dotnet-test-reporter
 
@@ -74,7 +55,7 @@ jobs:
         id: reporter
         run: |
           dotnet-test-reporter --verbosity detailed --reportType trx --targetDirectory=./target/test-results --reportsDirectory=./target/test-reports
-          
+
       - name: Parse test report and format results
         id: format_results
         run: |
@@ -95,6 +76,6 @@ jobs:
             <b><u>Branch:</u></b> ${{ steps.vars.outputs.BRANCH_NAME }}
 
             <b><u>See changes:</u></b> https://github.com/${{ github.repository }}/commit/${{github.sha}}
-            
+
             <b><u>Tests:</u></b> <b>${{ steps.format_results.outputs }}</b>         
-            
+      
