@@ -47,14 +47,18 @@ jobs:
 
       - name: Run .NET tests with reporter
         id: tests
-        working-directory: GithubActions
+        working-directory: src
         run: |
           dotnet test --configuration Release --logger "trx;LogFileName=test_results.trx" /nologo
 
-      - name: Generate test report using dotnet-test-reporter
-        id: reporter
-        run: |
-          dotnet-test-reporter --verbosity detailed --reportType trx --targetDirectory=./target/test-results --reportsDirectory=./target/test-reports
+      - name: Generate detailed test report
+        id: detailed_report
+        uses: bibipkins/dotnet-test-reporter@v1.4.0
+        with:
+          verbosity: detailed
+          reportType: trx
+          targetDirectory: ./target/test-results
+          reportsDirectory: ./target/test-reports
 
       - name: Parse test report and format results
         id: format_results
