@@ -1,58 +1,100 @@
-# This workflow will build a .NET project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
-
-name: .NET
+name: Run tests on push
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - dev
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+      - dev
+
 
 jobs:
-  build:
 
+  log-to-telegram:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: [ '7.x' ]
+
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: TelegramBot3333
+          POSTGRES_USER: sa
+          POSTGRES_PASSWORD: reallyStrongPwd#123
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 7.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
-    - name: Test with dotnet
-      run: dotnet test --logger trx --results-directory "TestResults"
-    - name: Upload dotnet test results
-      uses: actions/upload-artifact@v3
-      with:
-        name: dotnet-results.xlm
-        path: TestResults
-        retention-days: 1
-      if: ${{ always() }}
-    - name: Download dotnet test results
-      uses: actions/download-artifact@v3
-      with:
-        name: dotnet-results.xlm
-        path: TestResults
-      if: ${{ always() }}
-    - name: Extract test data 
-      run: |
-        value=`cat ~/dotnet-results.xlm`
-        expr $value 'total="([0-9]+)" executed="([0-9]+)" passed="([0-9]+)" failed="([0-9]+)"' dotnet-results.txt
-        pattern='total="([0-9]+)" executed="([0-9]+)" passed="([0-9]+)" failed="([0-9]+)"'
-          if [[ "$xml_string" =~ $pattern ]]; then
-          echo total="${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          echo executed="${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
-          echo passed="${BASH_REMATCH[3]}" >> $GITHUB_OUTPUT
-          echo failed="${BASH_REMATCH[4]}" >> $GITHUB_OUTPUT
-          echo "Total: $total, Executed: $executed, Passed: $passed, Failed: $failed"
-          else
-          echo "No match found."
-          fi
-      shell: bash
-      if: ${{ always() }}
-      
+      - name: Checkout repository
+        id: vars
+        shell: bash
+        run: |
+          # setting to ${{ steps.vars.outputs.BRANCH_NAME }}
+          echo "##[set-output name=BRANCH_NAME;]$(echo ${GITHUB_REF#refs/heads/})"
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET Core SDK ${{ matrix.dotnet-version }}
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Dotnet restore
+        working-directory: src
+        run: dotnet restore
+
+      - name: Install dotnet-ef tool
+        run: dotnet tool install --global dotnet-ef --version 7.0.13
+
+      - name: Dotnet build
+        working-directory: src
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Apply database migrations
+        working-directory: src/LingoPractices.Api
+        run: dotnet ef database update --configuration Release
+
+      - uses: actions/checkout@v3
+    
+      - name: Install dotnet-test-reporter
+        run: dotnet tool install --global dotnet-test-reporter
+
+      - name: Run .NET tests with reporter
+        id: tests
+        working-directory: src
+        run: |
+          dotnet test --configuration Release --logger "trx;LogFileName=test_results.trx" /nologo
+
+      - name: Generate test report using dotnet-test-reporter
+        id: reporter
+        run: |
+          dotnet-test-reporter --verbosity detailed --reportType trx --targetDirectory=./target/test-results --reportsDirectory=./target/test-reports
+          
+      - name: Parse test report and format results
+        id: format_results
+        run: |
+          python -c "import xml.etree.ElementTree as ET; tests = ET.parse('target/test-reports/index.html').getroot(); passed = int(tests.find('.//passed').text); failed = int(tests.find('.//failed').text); skipped = int(tests.find('.//skipped').text); time = float(tests.find('.//time').text); print(f'✔️ Passed: {passed}\n❌ Failed: {failed}\n⚠️ Skipped: {skipped}\n⏱️ Time: {time:.2f}s')"
+
+      - name: Send message to telegram on push
+        if: always()
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_TO }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          format: html
+          message: |
+            <b><u>${{ github.actor }}</u></b> created commit:
+            <b><u>Commit message:</u></b> ${{ github.event.commits[0].message }}
+
+            <b><u>Repository:</u></b> ${{ github.repository }}
+            <b><u>Branch:</u></b> ${{ steps.vars.outputs.BRANCH_NAME }}
+
+            <b><u>See changes:</u></b> https://github.com/${{ github.repository }}/commit/${{github.sha}}
+            
+            <b><u>Tests:</u></b> <b>${{ steps.format_results.outputs }}</b>         
+            
